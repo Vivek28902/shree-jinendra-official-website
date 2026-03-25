@@ -4,7 +4,7 @@ import { SiteData, HeroSlide, Project, SignatureElement, Partner, Testimonial, P
 import { 
   ArrowLeft, Save, RotateCcw, Plus, Trash2, ChevronDown, ChevronUp, 
   Image, FileText, Users, MessageSquare, BookOpen, Phone, Link2, 
-  Home, Building2, Sparkles, X, Check, AlertTriangle, Eye, LogOut
+  Home, Building2, Sparkles, X, Check, AlertTriangle, Eye, LogOut, Upload
 } from 'lucide-react';
 
 // ============================================================
@@ -103,6 +103,46 @@ const ImagePreview: React.FC<{ src: string; alt?: string }> = ({ src, alt }) => 
   </div>
 );
 
+const FileField: React.FC<{ label: string; value: string; onChange: (val: string) => void; placeholder?: string }> = 
+  ({ label, value, onChange, placeholder }) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit for Base64 storage
+        alert("File is too large! Please choose an image under 1MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-sans uppercase tracking-[0.15em] text-white/50 font-medium block">{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || "https://... or upload"}
+          className="flex-grow bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/90 font-sans font-light placeholder-white/20 focus:outline-none focus:border-brand-red/50 focus:bg-white/[0.07] transition-all"
+        />
+        <label className="flex-shrink-0 cursor-pointer flex items-center justify-center w-10 h-10 bg-brand-red/10 hover:bg-brand-red/20 border border-brand-red/20 rounded-lg text-brand-red transition-all" title="Upload Image">
+          <Upload size={18} />
+          <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+        </label>
+      </div>
+      {value.startsWith('data:image') && (
+        <p className="text-[10px] text-emerald-400/70 font-sans italic border-l border-emerald-500/30 pl-2">Local image uploaded (stored in browser memory)</p>
+      )}
+    </div>
+  );
+};
+
 
 // ============================================================
 // MAIN ADMIN PANEL
@@ -196,7 +236,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
       </div>
 
       <div className="p-5 rounded-xl bg-white/[0.03] border border-white/10 space-y-4">
-        <InputField label="Logo Source" value={draft.heroInfo.logoSrc} onChange={(v) => updateDraft('heroInfo.logoSrc', v)} placeholder="LOGO.png" />
+        <FileField label="Logo Source" value={draft.heroInfo.logoSrc} onChange={(v) => updateDraft('heroInfo.logoSrc', v)} placeholder="LOGO.png" />
         <TextAreaField label="Tagline" value={draft.heroInfo.tagline} onChange={(v) => updateDraft('heroInfo.tagline', v)} />
       </div>
 
@@ -213,7 +253,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             <div className="flex gap-4 items-start">
               {slide.image && <ImagePreview src={slide.image} alt={slide.alt} />}
               <div className="flex-grow space-y-3">
-                <InputField label="Image URL" value={slide.image} onChange={(v) => updateDraft(`heroSlides.${i}.image`, v)} placeholder="https://..." />
+                <FileField label="Image" value={slide.image} onChange={(v) => updateDraft(`heroSlides.${i}.image`, v)} placeholder="https://..." />
                 <InputField label="Alt Text" value={slide.alt} onChange={(v) => updateDraft(`heroSlides.${i}.alt`, v)} placeholder="Description" />
               </div>
             </div>
@@ -234,7 +274,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         <div className="flex gap-4 items-start">
           {draft.firmInfo.architectImage && <ImagePreview src={draft.firmInfo.architectImage} />}
           <div className="flex-grow">
-            <InputField label="Architect Image URL" value={draft.firmInfo.architectImage} onChange={(v) => updateDraft('firmInfo.architectImage', v)} />
+            <FileField label="Architect Image" value={draft.firmInfo.architectImage} onChange={(v) => updateDraft('firmInfo.architectImage', v)} />
           </div>
         </div>
         <InputField label="Architect Name" value={draft.firmInfo.architectName} onChange={(v) => updateDraft('firmInfo.architectName', v)} />
@@ -283,7 +323,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
               <InputField label="Category" value={project.category} onChange={(v) => updateDraft(`projects.${i}.category`, v)} />
               <InputField label="Sub-Category" value={project.subCategory} onChange={(v) => updateDraft(`projects.${i}.subCategory`, v)} />
             </div>
-            <InputField label="Image URL" value={project.image} onChange={(v) => updateDraft(`projects.${i}.image`, v)} />
+            <FileField label="Project Image" value={project.image} onChange={(v) => updateDraft(`projects.${i}.image`, v)} />
             <InputField label="Video URL" value={project.video} onChange={(v) => updateDraft(`projects.${i}.video`, v)} />
           </CollapsibleCard>
         ))}
@@ -311,15 +351,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             <InputField label="Title" value={el.title} onChange={(v) => updateDraft(`signatureElements.${i}.title`, v)} />
             <InputField label="Subtitle" value={el.subtitle} onChange={(v) => updateDraft(`signatureElements.${i}.subtitle`, v)} />
             <TextAreaField label="Description" value={el.desc} onChange={(v) => updateDraft(`signatureElements.${i}.desc`, v)} />
-            <InputField label="Main Image URL" value={el.image} onChange={(v) => updateDraft(`signatureElements.${i}.image`, v)} />
+            <FileField label="Main Image" value={el.image} onChange={(v) => updateDraft(`signatureElements.${i}.image`, v)} />
             <div className="space-y-2 mt-2">
               <label className="text-[11px] font-sans uppercase tracking-[0.15em] text-white/50 font-medium block">Gallery Images</label>
               {el.gallery.map((img, gi) => (
                 <div key={gi} className="flex gap-2 items-center">
-                  <input
+                  <FileField
+                    label={`Gallery Image ${gi + 1}`}
                     value={img}
-                    onChange={(e) => updateDraft(`signatureElements.${i}.gallery.${gi}`, e.target.value)}
-                    className="flex-grow bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/90 font-sans font-light placeholder-white/20 focus:outline-none focus:border-brand-red/50 transition-all"
+                    onChange={(v) => updateDraft(`signatureElements.${i}.gallery.${gi}`, v)}
                     placeholder={`Gallery image ${gi + 1}`}
                   />
                 </div>
@@ -351,7 +391,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             <InputField label="Name" value={partner.name} onChange={(v) => updateDraft(`partners.${i}.name`, v)} />
             <InputField label="Role" value={partner.role} onChange={(v) => updateDraft(`partners.${i}.role`, v)} />
             <InputField label="Firm" value={partner.firm} onChange={(v) => updateDraft(`partners.${i}.firm`, v)} />
-            <InputField label="Logo URL" value={partner.logo} onChange={(v) => updateDraft(`partners.${i}.logo`, v)} />
+            <FileField label="Logo" value={partner.logo} onChange={(v) => updateDraft(`partners.${i}.logo`, v)} />
             <TextAreaField label="Quote" value={partner.quote} onChange={(v) => updateDraft(`partners.${i}.quote`, v)} />
           </CollapsibleCard>
         ))}
@@ -408,7 +448,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
               <InputField label="Date" value={pub.date} onChange={(v) => updateDraft(`publications.${i}.date`, v)} placeholder="October 2025" />
             </div>
             <TextAreaField label="Description" value={pub.description} onChange={(v) => updateDraft(`publications.${i}.description`, v)} />
-            <InputField label="Image URL" value={pub.image} onChange={(v) => updateDraft(`publications.${i}.image`, v)} />
+            <FileField label="Feature Image" value={pub.image} onChange={(v) => updateDraft(`publications.${i}.image`, v)} />
             <TextAreaField label="Full Content" value={pub.content || ''} onChange={(v) => updateDraft(`publications.${i}.content`, v)} rows={5} />
           </CollapsibleCard>
         ))}
@@ -532,15 +572,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             </button>
             <button 
               onClick={handleSave} 
-              disabled={!hasChanges}
-              className={`flex items-center gap-2 text-xs font-sans font-medium px-4 py-2 rounded-lg transition-all ${
+              className={`flex items-center gap-2 text-sm font-sans font-semibold px-6 py-2.5 rounded-xl transition-all ${
                 hasChanges 
-                  ? 'text-white bg-brand-red hover:bg-brand-red/80 shadow-lg shadow-brand-red/20' 
-                  : 'text-white/30 bg-white/5 cursor-not-allowed'
+                  ? 'text-white bg-brand-red hover:bg-brand-red/80 shadow-[0_0_20px_rgba(227,24,55,0.4)] animate-pulse' 
+                  : 'text-white/30 bg-white/5 border border-white/5 cursor-not-allowed'
               }`}
             >
-              <Save size={14} />
-              Save Changes
+              <Save size={16} />
+              {hasChanges ? 'Apply All Changes' : 'Save Changes'}
             </button>
           </div>
         </div>
