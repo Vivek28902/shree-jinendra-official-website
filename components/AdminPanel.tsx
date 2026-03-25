@@ -105,11 +105,35 @@ const ImagePreview: React.FC<{ src: string; alt?: string }> = ({ src, alt }) => 
 
 const FileField: React.FC<{ label: string; value: string; onChange: (val: string) => void; placeholder?: string }> = 
   ({ label, value, onChange, placeholder }) => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // 1. Try to upload to Hostinger if possible
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (!isLocal) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          const response = await fetch('/api/upload.php', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          const data = await response.json();
+          if (data.success && data.url) {
+            onChange(data.url);
+            return;
+          }
+        } catch (error) {
+          console.warn('Hostinger upload failed, falling back to Base64:', error);
+        }
+      }
+
+      // 2. Fallback to Base64
       if (file.size > 1024 * 1024) { // 1MB limit for Base64 storage
-        alert("File is too large! Please choose an image under 1MB.");
+        alert("File is too large for local storage! Please choose an image under 1MB or upload to a production server.");
         return;
       }
       const reader = new FileReader();
