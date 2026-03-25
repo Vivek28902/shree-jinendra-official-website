@@ -10,6 +10,7 @@ interface AdminContextType {
   isLoading: boolean;
   updateSiteData: (newData: SiteData) => Promise<boolean>;
   resetSiteData: () => Promise<void>;
+  clearLocalData: () => void;
   isAdmin: boolean;
   login: (password: string) => boolean;
   logout: () => void;
@@ -34,6 +35,18 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
   });
 
+  // Helper to repair broken local assets paths
+  const repairPaths = (data: any): any => {
+    if (!data) return data;
+    const json = JSON.stringify(data);
+    // Replace any reference to the missing local ./assets/ folder with a neutral placeholder
+    const repaired = json.replace(/\.\/assets\/[a-zA-Z0-9\-_.]+/g, (match) => {
+      console.log(`Repairing broken path: ${match}`);
+      return "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800&auto=format&fit=crop";
+    });
+    return JSON.parse(repaired);
+  };
+
   // Fetch data from Supabase on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +61,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         if (error) throw error;
 
         if (data && data.data && Object.keys(data.data).length > 0) {
-          let parsed = data.data as SiteData;
+          let parsed = repairPaths(data.data as SiteData);
           
           // Migration: Update old logo path
           if (parsed.heroInfo && parsed.heroInfo.logoSrc === "LOGO.png") {
@@ -60,14 +73,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           // Fallback to localStorage if Supabase is empty, then to defaultSiteData
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
-            setSiteData({ ...defaultSiteData, ...JSON.parse(stored) });
+            setSiteData({ ...defaultSiteData, ...repairPaths(JSON.parse(stored)) });
           }
         }
       } catch (e) {
         console.error('Error fetching site data from Supabase:', e);
         // Fallback to localStorage
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) setSiteData({ ...defaultSiteData, ...JSON.parse(stored) });
+        if (stored) setSiteData({ ...defaultSiteData, ...repairPaths(JSON.parse(stored)) });
       } finally {
         setIsLoading(false);
       }
@@ -113,13 +126,18 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     return false;
   };
 
+  const clearLocalData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
+  };
+
   const logout = () => {
     setIsAdmin(false);
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
   };
 
   return (
-    <AdminContext.Provider value={{ siteData, isLoading, updateSiteData, resetSiteData, isAdmin, login, logout }}>
+    <AdminContext.Provider value={{ siteData, isLoading, updateSiteData, resetSiteData, clearLocalData, isAdmin, login, logout }}>
       {children}
     </AdminContext.Provider>
   );

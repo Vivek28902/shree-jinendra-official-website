@@ -105,8 +105,8 @@ export const defaultSiteData: SiteData = {
   },
 
   heroSlides: [
-    { image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b91d?q=80&w=2574&auto=format&fit=crop", alt: "Modern Landscape Architecture" },
-    { image: "https://images.unsplash.com/photo-1600596542815-e328701102b9?q=80&w=2669&auto=format&fit=crop", alt: "Luxury Villa Garden" },
+    { image: "https://images.unsplash.com/photo-1600585154340-be6199f50a09?q=80&w=2070&auto=format&fit=crop", alt: "Modern Interior Architecture" },
+    { image: "https://images.unsplash.com/photo-1600607687940-4e2ade3316d6?q=80&w=2070&auto=format&fit=crop", alt: "Contemporary Home Exterior" },
     { image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=2574&auto=format&fit=crop", alt: "Minimalist Courtyard" },
     { image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2670&auto=format&fit=crop", alt: "Resort Landscape" },
     { image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2500&auto=format&fit=crop", alt: "Seamless Integration" },

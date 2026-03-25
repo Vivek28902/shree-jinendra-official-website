@@ -15,7 +15,7 @@ interface AdminPanelProps {
   onBack: () => void;
 }
 
-type TabKey = 'hero' | 'firm' | 'projects' | 'elements' | 'partners' | 'testimonials' | 'publications' | 'contact' | 'social';
+type TabKey = 'hero' | 'firm' | 'projects' | 'elements' | 'partners' | 'testimonials' | 'publications' | 'contact' | 'social' | 'maintenance';
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'hero', label: 'Hero Section', icon: <Home size={18} /> },
@@ -27,6 +27,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'publications', label: 'Publications', icon: <BookOpen size={18} /> },
   { key: 'contact', label: 'Contact Info', icon: <Phone size={18} /> },
   { key: 'social', label: 'Social Links', icon: <Link2 size={18} /> },
+  { key: 'maintenance', label: 'Maintenance', icon: <AlertTriangle size={18} /> },
 ];
 
 // ---- Toast ----
@@ -172,9 +173,9 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
 // MAIN ADMIN PANEL
 // ============================================================
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
-  const { siteData, isLoading, updateSiteData, resetSiteData, logout } = useSiteData();
+  const { siteData, isLoading, updateSiteData, resetSiteData, clearLocalData, logout } = useSiteData();
   const [draft, setDraft] = useState<SiteData>(JSON.parse(JSON.stringify(siteData)));
-  const [activeTab, setActiveTab] = useState<TabKey>('hero');
+  const [activeTab, setActiveTab] = useState<TabKey>('hero' as any);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -546,6 +547,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
       case 'publications': return renderPublications();
       case 'contact': return renderContact();
       case 'social': return renderSocial();
+      case 'maintenance' as any: return (
+        <div className="space-y-8">
+          <div className="space-y-1 mb-6">
+            <h3 className="text-xl font-serif text-white">Maintenance & Repair</h3>
+            <p className="text-sm font-sans text-white/50 font-light">Troubleshoot and fix common website issues.</p>
+          </div>
+          
+          <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="text-amber-400" size={24} />
+              <h4 className="text-lg font-serif text-white">Fix My Website</h4>
+            </div>
+            <p className="text-sm font-sans text-white/70 leading-relaxed font-light">
+              If your images are not showing or the website looks empty, it might be due to old data stored in your browser. Clicking below will wipe your local cache and reload the latest data from the database.
+            </p>
+            <button 
+              onClick={() => { if(confirm("This will clear your local browser cache and reload. Unsaved changes will be lost. Continue?")) clearLocalData(); }}
+              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-sans font-semibold transition-all shadow-lg shadow-amber-500/20"
+            >
+              Reset Local Cache & Repair Paths
+            </button>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-red-500/5 border border-white/5 space-y-4">
+            <h4 className="text-sm font-sans text-white/50 uppercase tracking-widest font-semibold">Danger Zone</h4>
+            <div className="flex items-center justify-between gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
+              <div>
+                <p className="text-sm font-sans text-white font-medium">Revert to Factory Defaults</p>
+                <p className="text-xs font-sans text-white/40">Permanently delete ALL customizations from both local storage and database.</p>
+              </div>
+              <button 
+                onClick={() => setShowResetConfirm(true)}
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold transition-all"
+              >
+                Reset Database
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+      default: return null;
     }
   };
 
@@ -642,18 +684,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
       <div className="flex pt-16">
         {/* Sidebar */}
         <aside className={`fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-[#0E0E15] border-r border-white/5 overflow-y-auto z-40 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          {/* Missing Keys Warning */}
+          {(import.meta.env.VITE_SUPABASE_URL === 'your_supabase_project_url' || !import.meta.env.VITE_SUPABASE_URL) && (
+            <div className="m-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 animate-pulse">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={16} className="text-red-400" />
+                <span className="text-[11px] font-sans font-bold text-red-400 uppercase tracking-wider">Database Disconnected</span>
+              </div>
+              <p className="text-[10px] font-sans text-white/60 leading-relaxed font-light">
+                Please add your real Supabase keys to the <code className="text-red-300 bg-black/30 px-1 rounded">.env</code> file to enable global saving.
+              </p>
+            </div>
+          )}
+
           <nav className="p-4 space-y-1">
             {TABS.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${
-                  activeTab === tab.key 
+                  activeTab === (tab.key as any) 
                     ? 'bg-brand-red/10 text-brand-red border border-brand-red/20' 
                     : 'text-white/50 hover:text-white/80 hover:bg-white/5 border border-transparent'
                 }`}
               >
-                <span className={activeTab === tab.key ? 'text-brand-red' : 'text-white/40 group-hover:text-white/60'}>{tab.icon}</span>
+                <span className={activeTab === (tab.key as any) ? 'text-brand-red' : 'text-white/40 group-hover:text-white/60'}>{tab.icon}</span>
                 <span className="text-sm font-sans font-medium">{tab.label}</span>
               </button>
             ))}
