@@ -6,6 +6,7 @@ import {
   Image, FileText, Users, MessageSquare, BookOpen, Phone, Link2, 
   Home, Building2, Sparkles, X, Check, AlertTriangle, Eye, LogOut, Upload, Loader2
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 // ============================================================
 // ADMIN PANEL COMPONENT
@@ -109,22 +110,31 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 1. Try to upload to Hostinger if possible
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      
-      if (!isLocal) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await fetch('/api/upload.php', { method: 'POST', body: formData });
-          const data = await response.json();
-          if (data.success && data.url) {
-            onChange(data.url);
-            return;
-          }
-        } catch (error) {
-          console.warn('Hostinger upload failed, falling back to compression:', error);
+      // 1. Try to upload directly to Supabase Storage
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('sjaa-assets')
+          .upload(fileName, file, { cacheControl: '31536000', upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('sjaa-assets')
+          .getPublicUrl(fileName);
+
+        if (publicUrl) {
+          onChange(publicUrl);
+          return;
         }
+      } catch (error: any) {
+        if (error?.message?.includes('bucket not found') || error?.message?.includes('violates row-level security')) {
+          alert("Storage Not Configured! Please go to your Supabase Dashboard -> SQL Editor and run the code from 'lib/storage_setup.sql' to enable image uploads.");
+          return; // Stop and don't fallback to Base64, let them fix it
+        }
+        console.warn('Supabase Storage upload failed, falling back to local compression:', error);
       }
 
       // 2. Fallback to Local Compression (Canvas -> WebP Base64)
@@ -182,6 +192,9 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
       </div>
       {value.startsWith('data:image') && (
         <p className="text-[10px] text-emerald-400/70 font-sans italic border-l border-emerald-500/30 pl-2">Local image uploaded (compressed & stored in browser memory)</p>
+      )}
+      {value.includes('supabase.co/storage/v1/object/public/sjaa-assets/') && (
+        <p className="text-[10px] text-brand-red font-sans italic border-l border-brand-red/30 pl-2">Uploaded securely to Supabase Storage</p>
       )}
     </div>
   );
