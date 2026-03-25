@@ -729,6 +729,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
           {renderTabContent()}
         </main>
       </div>
+
+      {/* Floating Save Bar (Highly Visible) */}
+      <div className={`fixed bottom-0 left-0 lg:left-64 right-0 p-4 pb-6 sm:pb-8 flex justify-center z-[100] pointer-events-none transition-all duration-500 ease-out-back ${
+        hasChanges ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'
+      }`}>
+        <div className="bg-[#141420] border border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)] backdrop-blur-xl px-4 py-3 sm:px-6 sm:py-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full max-w-2xl mx-auto pointer-events-auto">
+          <div className="flex-1 text-center sm:text-left">
+            <h4 className="text-white font-serif font-medium sm:text-lg">You have unsaved changes</h4>
+            <p className="text-xs sm:text-sm text-white/50 font-sans font-light">Apply your changes to update the live website.</p>
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+            <button 
+              onClick={() => {
+                setDraft(JSON.parse(JSON.stringify(siteData)));
+                showToast('Changes discarded', 'info');
+              }}
+              disabled={isSaving}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-all font-sans font-medium text-sm"
+            >
+              Discard
+            </button>
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className={`flex-1 sm:flex-none flex justify-center items-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-lg font-sans font-semibold text-sm ${
+                isSaving ? 'bg-brand-red/50 text-white/50 cursor-wait' : 'bg-brand-red hover:bg-red-600 text-white shadow-brand-red/20'
+              }`}
+            >
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              {isSaving ? 'Saving...' : 'Apply Everything'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
