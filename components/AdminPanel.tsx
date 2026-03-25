@@ -4,7 +4,7 @@ import { SiteData, HeroSlide, Project, SignatureElement, Partner, Testimonial, P
 import { 
   ArrowLeft, Save, RotateCcw, Plus, Trash2, ChevronDown, ChevronUp, 
   Image, FileText, Users, MessageSquare, BookOpen, Phone, Link2, 
-  Home, Building2, Sparkles, X, Check, AlertTriangle, Eye, LogOut, Upload
+  Home, Building2, Sparkles, X, Check, AlertTriangle, Eye, LogOut, Upload, Loader2
 } from 'lucide-react';
 
 // ============================================================
@@ -148,13 +148,21 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
 // MAIN ADMIN PANEL
 // ============================================================
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
-  const { siteData, updateSiteData, resetSiteData, logout } = useSiteData();
+  const { siteData, isLoading, updateSiteData, resetSiteData, logout } = useSiteData();
   const [draft, setDraft] = useState<SiteData>(JSON.parse(JSON.stringify(siteData)));
   const [activeTab, setActiveTab] = useState<TabKey>('hero');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Sync draft with siteData when siteData is loaded from Supabase
+  useEffect(() => {
+    if (!isLoading) {
+      setDraft(JSON.parse(JSON.stringify(siteData)));
+    }
+  }, [isLoading, siteData]);
 
   useEffect(() => {
     setHasChanges(JSON.stringify(draft) !== JSON.stringify(siteData));
@@ -168,13 +176,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     setToast({ message, type });
   };
 
-  const handleSave = () => {
-    updateSiteData(draft);
-    showToast('All changes saved successfully!', 'success');
+  const handleSave = async () => {
+    if (!hasChanges || isSaving) return;
+    setIsSaving(true);
+    const success = await updateSiteData(draft);
+    setIsSaving(false);
+    if (success) {
+      showToast('All changes saved to Supabase!', 'success');
+    } else {
+      showToast('Failed to save to Supabase. Local changes kept.', 'error');
+    }
   };
 
-  const handleReset = () => {
-    resetSiteData();
+  const handleReset = async () => {
+    setIsSaving(true);
+    await resetSiteData();
+    setIsSaving(false);
     setDraft(JSON.parse(JSON.stringify(siteData)));
     setShowResetConfirm(false);
     showToast('All content reset to defaults.', 'info');
@@ -510,6 +527,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-white">
+      {/* Loading Overlay */}
+      {(isLoading || isSaving) && (
+        <div className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-[2px] flex items-center justify-center animate-fade-in">
+          <div className="flex flex-col items-center gap-4 bg-[#141420] border border-white/10 p-8 rounded-2xl shadow-2xl">
+            <Loader2 size={32} className="text-brand-red animate-spin" />
+            <p className="text-sm font-sans font-medium text-white/70">
+              {isSaving ? 'Saving to Supabase...' : 'Loading site data...'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
 
@@ -572,14 +601,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             </button>
             <button 
               onClick={handleSave} 
+              disabled={isSaving}
               className={`flex items-center gap-2 text-sm font-sans font-semibold px-6 py-2.5 rounded-xl transition-all ${
                 hasChanges 
-                  ? 'text-white bg-brand-red hover:bg-brand-red/80 shadow-[0_0_20px_rgba(227,24,55,0.4)] animate-pulse' 
+                  ? 'text-white bg-brand-red hover:bg-brand-red/80 shadow-[0_0_20px_rgba(227,24,55,0.4)]' 
                   : 'text-white/30 bg-white/5 border border-white/5 cursor-not-allowed'
-              }`}
+              } ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
             >
-              <Save size={16} />
-              {hasChanges ? 'Apply All Changes' : 'Save Changes'}
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              {isSaving ? 'Saving...' : (hasChanges ? 'Apply All Changes' : 'Save Changes')}
             </button>
           </div>
         </div>
