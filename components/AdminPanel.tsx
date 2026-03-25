@@ -507,8 +507,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-red to-brand-red/60 flex items-center justify-center">
-                <span className="text-white text-xs font-bold font-sans">S</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
+                <img src={siteData.heroInfo.logoSrc} alt="S" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-sm font-serif text-white leading-none">SJAA Admin</h1>

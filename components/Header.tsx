@@ -126,13 +126,14 @@ const Header: React.FC<HeaderProps> = ({
         
         {/* Logo Section */}
         <div 
-          className={`flex flex-col md:flex-row md:items-center gap-4 cursor-pointer z-50 group ${isSearchOpen ? 'hidden md:flex' : 'flex'}`} 
+          className={`flex items-center gap-4 cursor-pointer z-50 group ${isSearchOpen ? 'hidden md:flex' : 'flex'}`} 
           onClick={() => handleNavClick('home')}
         >
-          <div className="flex flex-col">
-            <span className="font-serif text-2xl md:text-3xl text-[#1A1A1A] tracking-wider leading-none">SJAA</span>
-            <span className="font-sans text-[0.5rem] md:text-[0.6rem] tracking-[0.2em] text-brand-red uppercase mt-1">Shree Jinendra Architect & Associates</span>
-          </div>
+          <img 
+            src={siteData.heroInfo.logoSrc} 
+            alt="SJAA Logo" 
+            className="h-12 md:h-16 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </div>
 
         {/* Desktop Navigation */}

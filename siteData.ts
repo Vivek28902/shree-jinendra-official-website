@@ -100,7 +100,7 @@ const SAMPLE_VIDEO = "https://interactive-examples.mdn.mozilla.net/media/cc0-vid
 
 export const defaultSiteData: SiteData = {
   heroInfo: {
-    logoSrc: "LOGO.png",
+    logoSrc: "/SJAA.PNG",
     tagline: "\"Sculpting habitats. Curating the human experience.\""
   },
 
