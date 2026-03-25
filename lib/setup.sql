@@ -13,10 +13,9 @@ create policy "Allow public read access"
   on site_configs for select
   using (true);
 
--- 4. Create a policy to allow updates (Admin)
--- Note: Replace 'true' with proper auth checks if you implement Supabase Auth later
-create policy "Allow public update access"
-  on site_configs for update
+-- 4. Create a policy to allow inserts and updates (Upsert support)
+create policy "Allow public all access"
+  on site_configs for all
   using (true)
   with check (true);
 
