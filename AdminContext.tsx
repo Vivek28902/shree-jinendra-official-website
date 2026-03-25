@@ -31,6 +31,12 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        
+        // Migration: Update old logo path
+        if (parsed.heroInfo && parsed.heroInfo.logoSrc === "LOGO.png") {
+          parsed.heroInfo.logoSrc = "/SJAA.PNG";
+        }
+        
         // Merge with defaults in case new fields were added
         return { ...defaultSiteData, ...parsed };
       }
