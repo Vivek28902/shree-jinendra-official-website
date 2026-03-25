@@ -116,30 +116,46 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
         try {
           const formData = new FormData();
           formData.append('file', file);
-          
-          const response = await fetch('/api/upload.php', {
-            method: 'POST',
-            body: formData,
-          });
-          
+          const response = await fetch('/api/upload.php', { method: 'POST', body: formData });
           const data = await response.json();
           if (data.success && data.url) {
             onChange(data.url);
             return;
           }
         } catch (error) {
-          console.warn('Hostinger upload failed, falling back to Base64:', error);
+          console.warn('Hostinger upload failed, falling back to compression:', error);
         }
       }
 
-      // 2. Fallback to Base64
-      if (file.size > 1024 * 1024) { // 1MB limit for Base64 storage
-        alert("File is too large for local storage! Please choose an image under 1MB or upload to a production server.");
-        return;
-      }
+      // 2. Fallback to Local Compression (Canvas -> WebP Base64)
       const reader = new FileReader();
-      reader.onloadend = () => {
-        onChange(reader.result as string);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimensions for local base64 storage
+          const MAX_SIZE = 1200;
+          if (width > height && width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress to WebP at 60% quality -> usually generates tiny base64 strings
+          const compressedBase64 = canvas.toDataURL('image/webp', 0.6);
+          onChange(compressedBase64);
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -148,21 +164,24 @@ const FileField: React.FC<{ label: string; value: string; onChange: (val: string
   return (
     <div className="space-y-1.5">
       <label className="text-[11px] font-sans uppercase tracking-[0.15em] text-white/50 font-medium block">{label}</label>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || "https://... or upload"}
-          className="flex-grow bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/90 font-sans font-light placeholder-white/20 focus:outline-none focus:border-brand-red/50 focus:bg-white/[0.07] transition-all"
-        />
-        <label className="flex-shrink-0 cursor-pointer flex items-center justify-center w-10 h-10 bg-brand-red/10 hover:bg-brand-red/20 border border-brand-red/20 rounded-lg text-brand-red transition-all" title="Upload Image">
-          <Upload size={18} />
-          <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-        </label>
+      <div className="flex gap-4 items-center">
+        {value && <ImagePreview src={value} alt="Preview" />}
+        <div className="flex-grow flex gap-2">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder || "https://... or upload"}
+            className="flex-grow bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/90 font-sans font-light placeholder-white/20 focus:outline-none focus:border-brand-red/50 focus:bg-white/[0.07] transition-all"
+          />
+          <label className="flex-shrink-0 cursor-pointer flex items-center justify-center w-10 h-10 bg-brand-red/10 hover:bg-brand-red/20 border border-brand-red/20 rounded-lg text-brand-red transition-all" title="Upload Image">
+            <Upload size={18} />
+            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+          </label>
+        </div>
       </div>
       {value.startsWith('data:image') && (
-        <p className="text-[10px] text-emerald-400/70 font-sans italic border-l border-emerald-500/30 pl-2">Local image uploaded (stored in browser memory)</p>
+        <p className="text-[10px] text-emerald-400/70 font-sans italic border-l border-emerald-500/30 pl-2">Local image uploaded (compressed & stored in browser memory)</p>
       )}
     </div>
   );
