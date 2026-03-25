@@ -1,0 +1,3 @@
+﻿components/Header.tsx(2,51): error TS2305: Module '"lucide-react"' has no exported member 'Instagram'.
+components/Header.tsx(2,62): error TS2305: Module '"lucide-react"' has no exported member 'Linkedin'.
+components/Header.tsx(2,72): error TS2305: Module '"lucide-react"' has no exported member 'Youtube'.
