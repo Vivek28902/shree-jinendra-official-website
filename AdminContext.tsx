@@ -101,8 +101,13 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       
       if (error) throw error;
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error saving to Supabase:', e);
+      if (e?.code === '42P01' || e?.message?.includes('relation "public.site_configs" does not exist')) {
+        alert("Database Error: The 'site_configs' table is missing!\n\nPlease go to your Supabase Dashboard -> SQL Editor and run the code from your 'lib/setup.sql' file.");
+      } else if (e?.message) {
+        alert(`Database Error: ${e.message}`);
+      }
       return false;
     }
   };
